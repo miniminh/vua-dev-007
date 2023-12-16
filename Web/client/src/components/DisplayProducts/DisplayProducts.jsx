@@ -21,20 +21,17 @@ function DisplayProducts({ data }) {
   }
 
   return (
-    <Box sx={{ flexGrow: 1, width: '100%', paddingRight: 2, paddingLeft: 4 }}>
-      <Typography variant="body1" color="black" sx={{ fontSize: '28px', marginBottom: '24px', fontWeight: '700' }}>
-        Sản phẩm gợi ý:
-      </Typography>
-
-      <Grid container spacing={1} columns={{ xs: 4, sm: 8, md: 12 }}>
+    <div style={{ width: '100%'}}>
+      <div style={{ paddingTop: '24px', display: 'flex', justifyContent: 'center', width: '100%', flexWrap: 'wrap'}}>
         {data.map((item) => (
-          <Grid item xs={2} sm={4} md={4} lg = {3} key={item.name}>
             <Card sx={{
-              maxWidth: 335,
+              maxWidth: 250,
               border: 'none',
+              marginRight: '24px',
+              marginBottom: '24px',
               boxShadow: 'none',
               '&:hover': {
-                outline: '2px solid black'
+                transform: 'scale(1.1)'
               }
             }}
             onClick = {() => {window.location.href = item.url}}
@@ -45,8 +42,8 @@ function DisplayProducts({ data }) {
                     {item.images.map((img, index) => (
                       <CardMedia key = {index}
                         component="img"
-                        height="350"
-                        width = "350"
+                        height="250"
+                        width = "250"
                         image= {img}
                         alt={item.name}
                       />
@@ -63,10 +60,9 @@ function DisplayProducts({ data }) {
                 </CardContent>
               </CardActionArea>
             </Card>
-          </Grid>
         ))}
-      </Grid>
-    </Box>
+      </div>
+    </div>
   )
 }
 

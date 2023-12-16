@@ -1,0 +1,7 @@
+body {
+    margin: 0 !important;
+}
+
+span.MuiFileInput-placeholder {
+    color: #c6c6c6 !important;
+}

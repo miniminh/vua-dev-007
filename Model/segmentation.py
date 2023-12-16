@@ -34,6 +34,7 @@ def process_pred_seg(image, pred_seg):
     
     masks = []
     crop_imgs = []
+    clothing_types = []
     
     max_value = pred_seg.max()
     for value in range(0, max_value.item()):
@@ -60,15 +61,15 @@ def process_pred_seg(image, pred_seg):
             crop_img = image_masked[y - extra:y+h + extra, x - extra:x+w + extra]
             crop_img[np.where(crop_img==0)] = 255
             crop_imgs.append(crop_img)
-            # plt.imsave(f"{ID2LABEL[str(idx)]}.jpg", crop_img)
+            clothing_types.append(ID2LABEL[str(idx)])
         except:
             print("error")
-    return crop_imgs
+    return crop_imgs, clothing_types
 
 
 
 def get_segmentation(path):
     image = Image.open(path)
     pred_seg = get_pred_seg(image)
-    crop_imgs = process_pred_seg(image, pred_seg)
-    return crop_imgs
+    crop_imgs, clothing_types = process_pred_seg(image, pred_seg)
+    return crop_imgs, clothing_types

@@ -27,22 +27,25 @@ def save_upload_file(upload_file, destination):
 path = 'downloaded_images'
 print(f"Getting embedding from {path}")
 # embedding, file_list = get_embedding(path)
-print("Get embedding complete!")
 
-# dump(embedding, 'embedding.joblib') 
-embedding = load('embedding.joblib') 
 # with open('embedding.pkl', 'wb') as f:
-#     pickle.dump(embedding, f)
+    # pickle.dump(embedding, f)
 
 # with open('file_list.pkl', 'wb') as f:
 #     pickle.dump(file_list, f)
+file_list = get_file_list(path)
+# with open('file_list.pkl', 'rb') as f:
+#     file_list = pickle.load(f)
 
-with open('file_list.pkl', 'rb') as f:
-    file_list = pickle.load(f)
+
+print(file_list)
+
+with open('embedding.pkl', 'rb') as f:
+    embedding = pickle.load(f)
 
 # print(file_list)
 # embedding = np.load('embedding.npy')
-
+print("Get embedding complete!")
 
 app = FastAPI()
 
@@ -69,12 +72,18 @@ async def upload_file(
     #     raise HTTPException(status_code=403, detail="Upload file is corrupted") 
     # finally:    
     input.file.close()
-    crop_imgs = get_segmentation(path)
-    new_embedding, new_file_list = transform_new_image(crop_imgs, embedding)
-    plot_embedding(crop_imgs, embedding, file_list, new_embedding, new_file_list)
-    nearest_id = np.argpartition((np.linalg.norm(embedding - new_embedding, axis=1)), 2)
-    # print(file_list[nearest_id[0]])
-    return nearest_id
+    crop_imgs, clothing_types = get_segmentation(path)
+    nearest = {}
+    for crop_img, clothing_type in zip(crop_imgs, clothing_types):
+        nearest[clothing_type] = []
+        new_embedding, new_file_list = transform_new_image(crop_img, embedding)
+        if new_embedding is not None:
+            # plot_embedding(crop_img, embedding, file_list, new_embedding, new_file_list)
+            nearest_id = np.argpartition((np.linalg.norm(embedding - new_embedding, axis=1)), 2)[:4]
+            for id in nearest_id:
+                nearest[clothing_type].append(file_list[id])
+    print(nearest)
+    return nearest
 
 if __name__ == "__main__":
     run('app:app', 

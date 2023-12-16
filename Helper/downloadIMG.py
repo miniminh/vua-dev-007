@@ -2,11 +2,12 @@ import os
 import json
 import requests
 
-jsonfile = 'output.json'
-finalfile = 'finalll.json'
+jsonfile = 'mock.json'
+finalfile = 'finallllll.json'
 
 def download_images(image_urls, output_folder, item_name):
     successful_downloads = []
+    filenames = []
     temp = []
     for image in image_urls:
         try:
@@ -23,6 +24,7 @@ def download_images(image_urls, output_folder, item_name):
         try:
             file_extension = image_url['image_url'].split('.')[-1]  # Get file extension from URL
             file_name = f"{item_name}_{idx}.{file_extension}"
+            filenames.append(file_name)
             file_path = os.path.join(output_folder, file_name)
             os.makedirs(output_folder, exist_ok=True)  # Ensure the directory exists
             with open(file_path, 'wb') as file:
@@ -32,7 +34,7 @@ def download_images(image_urls, output_folder, item_name):
         except Exception as e:
             print(f"Error downloading {image_url['image_url']}: {e}")
 
-    return successful_downloads
+    return successful_downloads, filenames
 
 current_directory = os.path.dirname(os.path.abspath(__file__))
 json_file_path = os.path.join(current_directory, jsonfile)
@@ -54,8 +56,9 @@ for index, item in enumerate(data, start=1):
     item_name = item['ID']
 
     if image_urls:
-        successful_downloads = download_images(image_urls, output_folder, item_name)
+        successful_downloads, filenames = download_images(image_urls, output_folder, item_name)
         item['images'] = successful_downloads
+        item['filenames'] = filenames
 
 final_json_path = os.path.join(current_directory, finalfile)
 with open(final_json_path, 'w') as file:

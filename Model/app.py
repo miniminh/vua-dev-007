@@ -9,11 +9,13 @@ import numpy as np
 import cv2
 import pickle 
 from joblib import dump, load
+from merger import merge
 
 from segmentation import get_segmentation
 from clustering import get_embedding, transform_new_image, get_file_list
 from utils import plot_embedding
 
+DO_MERGE = True 
 ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/bmp"]
 
 def save_upload_file(upload_file, destination):
@@ -56,6 +58,7 @@ async def test_get():
 @app.post("/api/upload/")
 async def upload_file(
     input: UploadFile = File(...)
+    
 ): 
     print("Received request?")
      
@@ -73,10 +76,17 @@ async def upload_file(
     # finally:    
     input.file.close()
     crop_imgs, clothing_types = get_segmentation(path)
+    if DO_MERGE:
+        style_vector = merge(crop_imgs)
     nearest = {}
     for crop_img, clothing_type in zip(crop_imgs, clothing_types):
         nearest[clothing_type] = []
-        new_embedding, new_file_list = transform_new_image(crop_img, embedding)
+        if DO_MERGE:
+            concat_vector = np.concatenate(style_vector, crop_img)
+            merge_feature = merge(concat_vector)
+            new_embedding, new_file_list = transform_new_image(merge_feature, embedding)
+        else:
+            new_embedding, new_file_list = transform_new_image(crop_img, embedding)
         if new_embedding is not None:
             # plot_embedding(crop_img, embedding, file_list, new_embedding, new_file_list)
             nearest_id = np.argpartition((np.linalg.norm(embedding - new_embedding, axis=1)), 2)[:4]

@@ -12,11 +12,32 @@ from joblib import dump, load
 from merger import merge
 
 from segmentation import get_segmentation
-from clustering import get_embedding, transform_new_image, get_file_list
+from clustering import get_embedding, transform_new_image, get_file_list, save_and_extract, create_new_embedding
 from utils import plot_embedding
 
-DO_MERGE = True 
+DO_MERGE = True
 ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/bmp"]
+
+print(f"Getting embedding")
+brand = 'adidas'
+# path = f'{brand}_images'
+# embedding, file_list = get_embedding(path)
+
+# with open(f'{brand}_embedding.pkl', 'wb') as f:
+#     pickle.dump(embedding, f)
+
+# with open(f'{brand}_file_list.pkl', 'wb') as f:
+#     pickle.dump(file_list, f)
+
+
+with open(f'{brand}_embedding.pkl', 'rb') as f:
+    embedding = pickle.load(f)
+
+with open(f'{brand}_file_list.pkl', 'rb') as f:
+    file_list = pickle.load(f)
+
+print("Get embedding complete!")
+
 
 def save_upload_file(upload_file, destination):
     try:
@@ -25,29 +46,6 @@ def save_upload_file(upload_file, destination):
     finally:
         upload_file.file.close()
 
-
-path = 'downloaded_images'
-print(f"Getting embedding from {path}")
-# embedding, file_list = get_embedding(path)
-
-# with open('embedding.pkl', 'wb') as f:
-    # pickle.dump(embedding, f)
-
-# with open('file_list.pkl', 'wb') as f:
-#     pickle.dump(file_list, f)
-file_list = get_file_list(path)
-# with open('file_list.pkl', 'rb') as f:
-#     file_list = pickle.load(f)
-
-
-print(file_list)
-
-with open('embedding.pkl', 'rb') as f:
-    embedding = pickle.load(f)
-
-# print(file_list)
-# embedding = np.load('embedding.npy')
-print("Get embedding complete!")
 
 app = FastAPI()
 
@@ -75,27 +73,53 @@ async def upload_file(
     #     raise HTTPException(status_code=403, detail="Upload file is corrupted") 
     # finally:    
     input.file.close()
+    
     crop_imgs, clothing_types = get_segmentation(path)
+    
+    
     if DO_MERGE:
-        style_vector = merge(crop_imgs)
-    nearest = {}
-    for crop_img, clothing_type in zip(crop_imgs, clothing_types):
-        nearest[clothing_type] = []
-        if DO_MERGE:
-            concat_vector = np.concatenate(style_vector, crop_img)
+        features = []
+        null_features = []
+        for crop_img, clothing_type in zip(crop_imgs, clothing_types):
+            if clothing_type not in ['Upper-clothes', 'Pants']:
+                null_features.append(None)
+                continue
+            _, feature = save_and_extract(crop_img)
+            features.append(feature.squeeze())
+            null_features.append(feature.squeeze())
+            
+        features = np.array(features)
+        style_vector = merge(features) 
+        nearest = {}
+        for crop_img, clothing_type, feature in zip(crop_imgs, clothing_types, null_features):
+            if clothing_type not in ['Upper-clothes', 'Pants']:
+                continue
+            nearest[clothing_type] = []
+            concat_vector = np.concatenate([style_vector, feature.reshape(1,-1)])
             merge_feature = merge(concat_vector)
-            new_embedding, new_file_list = transform_new_image(merge_feature, embedding)
-        else:
+            new_embedding = create_new_embedding(merge_feature, embedding)
+            if new_embedding is not None:
+                # plot_embedding(crop_img, embedding, file_list, new_embedding, new_file_list)
+                nearest_id = np.argpartition((np.linalg.norm(embedding - new_embedding, axis=1)), 2)[:2]
+                for id in nearest_id:
+                    nearest[clothing_type].append(file_list[id])
+    else:
+        nearest = {}
+        
+        for crop_img, clothing_type in zip(crop_imgs, clothing_types):
+            nearest[clothing_type] = []
             new_embedding, new_file_list = transform_new_image(crop_img, embedding)
-        if new_embedding is not None:
-            # plot_embedding(crop_img, embedding, file_list, new_embedding, new_file_list)
-            nearest_id = np.argpartition((np.linalg.norm(embedding - new_embedding, axis=1)), 2)[:4]
-            for id in nearest_id:
-                nearest[clothing_type].append(file_list[id])
+            if new_embedding is not None:
+                # plot_embedding(crop_img, embedding, file_list, new_embedding, new_file_list)
+                nearest_id = np.argpartition((np.linalg.norm(embedding - new_embedding, axis=1)), 2)[:2]
+                for id in nearest_id:
+                    nearest[clothing_type].append(file_list[id])
+                    
     print(nearest)
     return nearest
 
 if __name__ == "__main__":
+    
     run('app:app', 
         host="0.0.0.0", 
         port=14024, 

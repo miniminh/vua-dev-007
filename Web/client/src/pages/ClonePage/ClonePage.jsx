@@ -32,7 +32,7 @@ const ImageUploadComponent = () => {
       formData.append('input', selectedFile)
       setUploading(true)
       try {
-        const response = await axios.post('http://10.124.3.196:5050/test', formData, {
+        const response = await axios.post('http://localhost:5050/suggest', formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           }
@@ -63,7 +63,7 @@ const ImageUploadComponent = () => {
             flexDirection: 'column',
             alignItems: 'center',
             marginTop: '24px',
-            width: '100%', 
+            width: '100%',
             maxWidth: '350px',
             marginLeft: 'auto',
             marginRight: 'auto'

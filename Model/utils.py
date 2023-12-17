@@ -51,9 +51,8 @@ def plot_embedding(crop_imgs, embedding, file_list, new_embedding = None, new_fi
   for i in range(len(crop_imgs)):
     ab = AnnotationBbox(get_image(file_list[i]), (embedding[i, 0], embedding[i, 1]), frameon=False)
     ax.add_artist(ab)
-  if new_embedding is not None or new_file_list is not None:
-    for i in range(len(new_file_list)):
-        ab = AnnotationBbox(get_image(new_file_list[i], zoom=1), (new_embedding[i, 0], new_embedding[i, 1]), frameon=False)
+  for i in range(len(new_file_list)):
+    ab = AnnotationBbox(get_image(new_file_list[i], zoom=1), (new_embedding[i, 0], new_embedding[i, 1]), frameon=False)
     ax.add_artist(ab)
   
   fig.savefig('embedding.png')
